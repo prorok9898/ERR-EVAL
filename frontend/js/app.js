@@ -1,361 +1,218 @@
 /**
- * MIRAGE Benchmark - Frontend Application
- * Handles leaderboard display, search/sort, and chart rendering
+ * MIRAGE REFERENCE IMPLEMENTATION
+ * High-fidelity interaction logic & Chart.js configuration
  */
 
-// Application state
-let leaderboardData = null;
-let filteredData = [];
-
-// Chart instances
-let radarChart = null;
-let barChart = null;
-
-// Chart.js configuration
-const chartColors = {
-    primary: 'rgba(99, 102, 241, 1)',
-    primaryLight: 'rgba(99, 102, 241, 0.3)',
-    secondary: 'rgba(139, 92, 246, 1)',
-    secondaryLight: 'rgba(139, 92, 246, 0.3)',
-    tertiary: 'rgba(6, 182, 212, 1)',
-    tertiaryLight: 'rgba(6, 182, 212, 0.3)',
-    success: 'rgba(16, 185, 129, 1)',
-    successLight: 'rgba(16, 185, 129, 0.3)',
-    warning: 'rgba(245, 158, 11, 1)',
-    warningLight: 'rgba(245, 158, 11, 0.3)',
-    text: 'rgba(240, 240, 245, 0.8)',
-    textMuted: 'rgba(160, 160, 176, 0.6)',
-    grid: 'rgba(255, 255, 255, 0.08)',
+// STATE
+let state = {
+    data: null,
+    filtered: [],
+    radarChart: null,
+    barChart: null
 };
 
-const modelColors = [
-    { bg: chartColors.primaryLight, border: chartColors.primary },
-    { bg: chartColors.secondaryLight, border: chartColors.secondary },
-    { bg: chartColors.tertiaryLight, border: chartColors.tertiary },
-    { bg: chartColors.successLight, border: chartColors.success },
-    { bg: chartColors.warningLight, border: chartColors.warning },
-];
+// AESTHETIC CONFIG (Matches CSS)
+const THEME = {
+    void: '#050505',
+    text: '#e0e0e0',
+    muted: '#666666',
+    signal: '#70FF8B',
+    signalDim: 'rgba(112, 255, 139, 0.2)',
+    error: '#FF5C5C',
+    grid: '#1f1f1f',
+    font: 'Chivo Mono'
+};
 
-// Initialize on DOM load
+// INIT
 document.addEventListener('DOMContentLoaded', async () => {
+    Chart.defaults.font.family = THEME.font;
+    Chart.defaults.color = THEME.muted;
+
     await loadData();
-    setupEventListeners();
-    renderLeaderboard();
-    renderCharts();
+    setupInteractions();
+    renderAll();
 });
 
-/**
- * Load leaderboard data from JSON
- */
 async function loadData() {
     try {
-        const response = await fetch('data/results.json');
-        if (!response.ok) {
-            throw new Error('No data available');
-        }
-        leaderboardData = await response.json();
-        filteredData = [...(leaderboardData.entries || [])];
+        const res = await fetch('data/results.json');
+        if (!res.ok) throw new Error('Data Access Failure');
+        const json = await res.json();
 
-        // Update total models count
-        document.getElementById('total-models').textContent = filteredData.length;
-    } catch (error) {
-        console.log('No results data yet:', error.message);
-        leaderboardData = { entries: [] };
-        filteredData = [];
+        state.data = json;
+        state.filtered = [...(json.entries || [])];
+
+        // Update hero metrics
+        document.getElementById('total-models').textContent =
+            state.filtered.length.toString().padStart(2, '0');
+
+    } catch (e) {
+        console.warn('[MIRAGE] System Status: Awaiting Data', e);
+        // Fallback for visual testing if file is empty/missing
+        state.data = { entries: [] };
+        state.filtered = [];
     }
 }
 
-/**
- * Setup event listeners for search and sort
- */
-function setupEventListeners() {
-    const searchInput = document.getElementById('search-input');
-    const sortSelect = document.getElementById('sort-select');
+function setupInteractions() {
+    const search = document.getElementById('search-input');
+    const sort = document.getElementById('sort-select');
 
-    searchInput.addEventListener('input', (e) => {
-        filterAndSort(e.target.value, sortSelect.value);
+    search.addEventListener('input', (e) => {
+        applyFilters(e.target.value, sort.value);
     });
 
-    sortSelect.addEventListener('change', (e) => {
-        filterAndSort(searchInput.value, e.target.value);
+    sort.addEventListener('change', (e) => {
+        applyFilters(search.value, e.target.value);
     });
 }
 
-/**
- * Filter and sort leaderboard data
- */
-function filterAndSort(searchTerm, sortBy) {
-    let data = [...(leaderboardData.entries || [])];
+function applyFilters(term, method) {
+    let result = [...state.data.entries];
 
-    // Filter by search term
-    if (searchTerm) {
-        const term = searchTerm.toLowerCase();
-        data = data.filter(entry =>
-            entry.model_name.toLowerCase().includes(term) ||
-            entry.model_id.toLowerCase().includes(term)
+    // Search
+    if (term) {
+        const t = term.toLowerCase();
+        result = result.filter(entry =>
+            entry.model_name.toLowerCase().includes(t) ||
+            entry.model_id.toLowerCase().includes(t)
         );
     }
 
     // Sort
-    if (sortBy === 'overall') {
-        data.sort((a, b) => b.overall_score - a.overall_score);
-    } else if (sortBy in (data[0]?.axis_scores || {})) {
-        data.sort((a, b) => (b.axis_scores[sortBy] || 0) - (a.axis_scores[sortBy] || 0));
+    if (method === 'overall') {
+        result.sort((a, b) => b.overall_score - a.overall_score);
+    } else {
+        result.sort((a, b) =>
+            (b.axis_scores[method] || 0) - (a.axis_scores[method] || 0)
+        );
     }
 
-    // Update ranks
-    data.forEach((entry, idx) => entry.rank = idx + 1);
+    // Re-rank
+    result.forEach((item, index) => item.rank = index + 1);
 
-    filteredData = data;
-    renderLeaderboard();
+    state.filtered = result;
+    renderAll();
 }
 
-/**
- * Render the leaderboard table
- */
+function renderAll() {
+    renderLeaderboard();
+    renderCharts();
+}
+
 function renderLeaderboard() {
     const tbody = document.getElementById('leaderboard-body');
-    const noDataMessage = document.getElementById('no-data-message');
+    const stub = document.getElementById('no-data-message');
 
-    if (filteredData.length === 0) {
+    if (!state.filtered.length) {
         tbody.innerHTML = '';
-        noDataMessage.style.display = 'block';
+        stub.style.display = 'block';
         return;
     }
 
-    noDataMessage.style.display = 'none';
-
-    tbody.innerHTML = filteredData.map(entry => {
-        const rankClass = entry.rank <= 3 ? `rank-${entry.rank}` : 'rank-other';
-
-        return `
-            <tr>
-                <td class="rank-col">
-                    <span class="rank-badge ${rankClass}">${entry.rank}</span>
+    stub.style.display = 'none';
+    tbody.innerHTML = state.filtered.map(entry => `
+        <tr>
+            <td class="col-rank">${String(entry.rank).padStart(2, '0')}</td>
+            <td class="col-model">
+                ${entry.model_name}
+                <span class="model-sub">${entry.model_id}</span>
+            </td>
+            <td class="col-score">${entry.overall_score.toFixed(2)}</td>
+            ${['A', 'B', 'C', 'D', 'E'].map(t => `
+                <td class="col-track" style="color: ${getScoreColor(entry.track_scores[t])}">
+                    ${(entry.track_scores[t] || 0).toFixed(1)}
                 </td>
-                <td class="model-col">
-                    <div class="model-info">
-                        <span class="model-name">${escapeHtml(entry.model_name)}</span>
-                        <span class="model-id">${escapeHtml(entry.model_id)}</span>
-                    </div>
-                </td>
-                <td class="score-col">
-                    <div class="score-display">
-                        <span class="score-value">${entry.overall_score.toFixed(2)}</span>
-                        <span class="score-max">/ 10</span>
-                    </div>
-                </td>
-                ${renderTrackScores(entry.track_scores)}
-            </tr>
-        `;
-    }).join('');
+            `).join('')}
+        </tr>
+    `).join('');
 }
 
-/**
- * Render track score cells
- */
-function renderTrackScores(trackScores) {
-    const tracks = ['A', 'B', 'C', 'D', 'E'];
-
-    return tracks.map(track => {
-        const score = trackScores?.[track] ?? '-';
-        const scoreClass = getScoreClass(score);
-        const displayScore = typeof score === 'number' ? score.toFixed(1) : score;
-
-        return `<td class="track-col"><span class="track-score ${scoreClass}">${displayScore}</span></td>`;
-    }).join('');
+function getScoreColor(val) {
+    if (val >= 7) return THEME.signal;
+    if (val >= 4) return '#ffffff';
+    return THEME.muted; // Low scores fade into noise
 }
 
-/**
- * Get CSS class based on score value
- */
-function getScoreClass(score) {
-    if (typeof score !== 'number') return '';
-    if (score >= 7) return 'high';
-    if (score >= 4) return 'medium';
-    return 'low';
-}
-
-/**
- * Render charts
- */
 function renderCharts() {
-    renderRadarChart();
-    renderBarChart();
-}
+    const topModels = state.filtered.slice(0, 5);
+    if (!topModels.length) return;
 
-/**
- * Render radar chart for axis comparison
- */
-function renderRadarChart() {
-    const ctx = document.getElementById('radar-chart');
-    if (!ctx) return;
+    // AXIS RADAR
+    const radarCtx = document.getElementById('radar-chart');
+    if (state.radarChart) state.radarChart.destroy();
 
-    const top5 = filteredData.slice(0, 5);
-
-    if (top5.length === 0) {
-        // Show placeholder
-        return;
-    }
-
-    const labels = [
-        'Ambiguity Detection',
-        'Hallucination Avoidance',
-        'Localization',
-        'Response Strategy',
-        'Epistemic Tone'
-    ];
-
-    const datasets = top5.map((entry, idx) => ({
-        label: entry.model_name,
-        data: [
-            entry.axis_scores?.ambiguity_detection || 0,
-            entry.axis_scores?.hallucination_avoidance || 0,
-            entry.axis_scores?.localization_of_uncertainty || 0,
-            entry.axis_scores?.response_strategy || 0,
-            entry.axis_scores?.epistemic_tone || 0,
-        ],
-        backgroundColor: modelColors[idx].bg,
-        borderColor: modelColors[idx].border,
-        borderWidth: 2,
-        pointBackgroundColor: modelColors[idx].border,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1,
-        pointRadius: 4,
-    }));
-
-    if (radarChart) {
-        radarChart.destroy();
-    }
-
-    radarChart = new Chart(ctx, {
+    state.radarChart = new Chart(radarCtx, {
         type: 'radar',
-        data: { labels, datasets },
+        data: {
+            labels: ['Ambiguity', 'Hallucination', 'Localization', 'Strategy', 'Tone'],
+            datasets: topModels.map((m, i) => ({
+                label: m.model_name,
+                data: [
+                    m.axis_scores.ambiguity_detection,
+                    m.axis_scores.hallucination_avoidance,
+                    m.axis_scores.localization_of_uncertainty,
+                    m.axis_scores.response_strategy,
+                    m.axis_scores.epistemic_tone
+                ],
+                borderColor: i === 0 ? THEME.signal : '#444', // Top model gets signal color
+                backgroundColor: i === 0 ? THEME.signalDim : 'transparent',
+                borderWidth: i === 0 ? 2 : 1,
+                pointRadius: 0
+            }))
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
                 r: {
-                    min: 0,
-                    max: 2,
-                    ticks: {
-                        stepSize: 0.5,
-                        color: chartColors.textMuted,
-                        backdropColor: 'transparent',
-                    },
-                    grid: {
-                        color: chartColors.grid,
-                    },
-                    angleLines: {
-                        color: chartColors.grid,
-                    },
-                    pointLabels: {
-                        color: chartColors.text,
-                        font: {
-                            size: 11,
-                        },
-                    },
-                },
+                    grid: { color: THEME.grid },
+                    angleLines: { color: THEME.grid },
+                    pointLabels: { color: THEME.text, font: { size: 10 } },
+                    ticks: { display: false, max: 2, min: 0 }
+                }
             },
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: {
-                        color: chartColors.text,
-                        padding: 16,
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                    },
-                },
-            },
-        },
+                    labels: { color: THEME.muted, boxWidth: 10 }
+                }
+            }
+        }
     });
-}
 
-/**
- * Render bar chart for track performance
- */
-function renderBarChart() {
-    const ctx = document.getElementById('bar-chart');
-    if (!ctx) return;
+    // TRACK BAR
+    const barCtx = document.getElementById('bar-chart');
+    if (state.barChart) state.barChart.destroy();
 
-    const top5 = filteredData.slice(0, 5);
-
-    if (top5.length === 0) {
-        return;
-    }
-
-    const tracks = ['A', 'B', 'C', 'D', 'E'];
-    const trackNames = {
-        'A': 'Noisy Perception',
-        'B': 'Ambiguous Semantics',
-        'C': 'False Premise',
-        'D': 'Underspecified',
-        'E': 'Conflicts',
-    };
-
-    const datasets = top5.map((entry, idx) => ({
-        label: entry.model_name,
-        data: tracks.map(t => entry.track_scores?.[t] || 0),
-        backgroundColor: modelColors[idx].bg,
-        borderColor: modelColors[idx].border,
-        borderWidth: 2,
-        borderRadius: 6,
-    }));
-
-    if (barChart) {
-        barChart.destroy();
-    }
-
-    barChart = new Chart(ctx, {
+    state.barChart = new Chart(barCtx, {
         type: 'bar',
         data: {
-            labels: tracks.map(t => trackNames[t]),
-            datasets,
+            labels: ['Perception', 'Semantics', 'False Premise', 'Underspecified', 'Conflicts'],
+            datasets: topModels.map((m, i) => ({
+                label: m.model_name,
+                data: ['A', 'B', 'C', 'D', 'E'].map(t => m.track_scores[t]),
+                backgroundColor: i === 0 ? THEME.signal : '#333',
+                stack: 'group' + i // Separate stacks
+            }))
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    ticks: {
-                        color: chartColors.text,
-                    },
-                    grid: {
-                        color: chartColors.grid,
-                    },
+                    grid: { display: false },
+                    ticks: { color: THEME.text }
                 },
                 y: {
-                    min: 0,
+                    grid: { color: THEME.grid },
                     max: 10,
-                    ticks: {
-                        color: chartColors.textMuted,
-                    },
-                    grid: {
-                        color: chartColors.grid,
-                    },
-                },
+                    ticks: { color: THEME.muted }
+                }
             },
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: chartColors.text,
-                        padding: 16,
-                        usePointStyle: true,
-                        pointStyle: 'rect',
-                    },
-                },
-            },
-        },
+                legend: { display: false } // Minimalist - rely on hover or context
+            }
+        }
     });
-}
-
-/**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
