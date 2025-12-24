@@ -133,6 +133,24 @@ a:hover {
     letter-spacing: 0.1em;
 }
 
+.logo-credit {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    letter-spacing: 0.05em;
+}
+
+.logo-credit a {
+    color: var(--accent-signal);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s var(--ease-out-expo);
+}
+
+.logo-credit a:hover {
+    border-color: var(--accent-signal);
+}
+
 .site-nav {
     display: flex;
     gap: 2rem;
@@ -305,6 +323,41 @@ select:focus {
     transform: translateY(-50%);
     color: var(--text-muted);
     pointer-events: none;
+}
+
+/* Score Legend */
+.score-legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-dot.green {
+    background-color: var(--accent-signal);
+}
+
+.legend-dot.white {
+    background-color: #ffffff;
+}
+
+.legend-dot.grey {
+    background-color: var(--text-muted);
 }
 
 /* TABLE */
