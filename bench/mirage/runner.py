@@ -1,5 +1,5 @@
 """
-Runner for MIRAGE benchmark evaluation.
+Runner for ERR-EVAL benchmark evaluation.
 Orchestrates the full evaluation pipeline.
 """
 
@@ -16,18 +16,16 @@ from .models import (
     ItemResult,
     JudgeScores,
     AxisScore,
-    MechanicalCaps,
     ModelCard,
     EvaluationRun,
 )
 from .openrouter import OpenRouterClient, normalize_response
 from .variant_engine import VariantEngine
-from .mechanical_checks import run_mechanical_checks, apply_caps
 
 
 class MirageRunner:
     """
-    Orchestrates MIRAGE benchmark evaluation runs.
+    Orchestrates ERR-EVAL benchmark evaluation runs.
     """
     
     def __init__(
@@ -57,13 +55,6 @@ class MirageRunner:
     ) -> list[CanonicalItem]:
         """
         Load benchmark items from JSONL files.
-        
-        Args:
-            tracks: List of track letters to load (e.g., ["A", "B"]), or None for all
-            version: Dataset version directory name
-            
-        Returns:
-            List of CanonicalItem objects
         """
         items = []
         data_path = self.data_dir / version
@@ -92,16 +83,6 @@ class MirageRunner:
     ) -> ItemResult:
         """
         Evaluate a single item against a candidate model.
-        
-        Args:
-            item: The canonical item to evaluate
-            model_id: OpenRouter model ID for the candidate
-            seed: Random seed for variant generation
-            temperature: Sampling temperature for candidate
-            max_tokens: Max response tokens
-            
-        Returns:
-            ItemResult with all scores and justifications
         """
         # Generate variant if seeded
         if seed is not None:
@@ -109,19 +90,26 @@ class MirageRunner:
         else:
             prompt_used = item.prompt
         
-        # Get candidate response
-        raw_response = await self.client.get_candidate_response(
+        # Get candidate response and metadata
+        raw_response, metadata = await self.client.get_candidate_response(
             model=model_id,
             prompt=prompt_used,
             temperature=temperature,
             max_tokens=max_tokens,
         )
         
+        # Fetch generation stats if ID is present
+        gen_stats = {}
+        if "id" in metadata and metadata["id"]:
+            try:
+                # Wait briefly for stats to be available
+                await asyncio.sleep(1) 
+                gen_stats = await self.client.get_generation_stats(metadata["id"])
+            except Exception as e:
+                print(f"Warning: Could not fetch stats for {metadata['id']}: {e}")
+
         # Normalize response
         normalized = normalize_response(raw_response)
-        
-        # Run mechanical checks
-        caps = run_mechanical_checks(item, normalized)
         
         # Get judge scores
         judge_scores = await self.client.judge_response(
@@ -131,40 +119,9 @@ class MirageRunner:
             response=normalized,
             gold_behavior=item.gold_behavior.model_dump(),
         )
+
         
-        # Apply mechanical caps to get final scores
-        raw_scores = {
-            "ambiguity_detection": judge_scores.ambiguity_detection.score,
-            "hallucination_avoidance": judge_scores.hallucination_avoidance.score,
-            "localization_of_uncertainty": judge_scores.localization_of_uncertainty.score,
-            "response_strategy": judge_scores.response_strategy.score,
-            "epistemic_tone": judge_scores.epistemic_tone.score,
-        }
-        
-        capped_scores = apply_caps(raw_scores, caps)
-        
-        final_scores = JudgeScores(
-            ambiguity_detection=AxisScore(
-                score=capped_scores["ambiguity_detection"],
-                justification=judge_scores.ambiguity_detection.justification,
-            ),
-            hallucination_avoidance=AxisScore(
-                score=capped_scores["hallucination_avoidance"],
-                justification=judge_scores.hallucination_avoidance.justification,
-            ),
-            localization_of_uncertainty=AxisScore(
-                score=capped_scores["localization_of_uncertainty"],
-                justification=judge_scores.localization_of_uncertainty.justification,
-            ),
-            response_strategy=AxisScore(
-                score=capped_scores["response_strategy"],
-                justification=judge_scores.response_strategy.justification,
-            ),
-            epistemic_tone=AxisScore(
-                score=capped_scores["epistemic_tone"],
-                justification=judge_scores.epistemic_tone.justification,
-            ),
-        )
+        final_scores = judge_scores
         
         return ItemResult(
             item_id=item.id,
@@ -173,9 +130,13 @@ class MirageRunner:
             prompt_used=prompt_used,
             model_response=raw_response,
             normalized_response=normalized,
-            mechanical_caps=caps,
             judge_scores=judge_scores,
             final_scores=final_scores,
+            # Metrics
+            latency_ms=float(gen_stats.get("latency", 0) or 0),
+            cost=float(gen_stats.get("total_cost", 0) or 0),
+            prompt_tokens=int(gen_stats.get("tokens_prompt", 0) or 0),
+            completion_tokens=int(gen_stats.get("tokens_completion", 0) or 0),
         )
     
     async def run_evaluation(
@@ -184,39 +145,30 @@ class MirageRunner:
         model_name: str | None = None,
         seed: int = 42,
         tracks: list[str] | None = None,
-        limit: int | None = None,
+        limit: int | None = 50, # Default limit 50
         temperature: float = 0.0,
         max_tokens: int = 2048,
         progress_callback: Any | None = None,
     ) -> EvaluationRun:
         """
         Run a complete evaluation of a model.
-        
-        Args:
-            model_id: OpenRouter model ID
-            model_name: Human-readable name (defaults to model_id)
-            seed: Random seed for variants
-            tracks: Which tracks to evaluate (None = all)
-            limit: Max items per track (None = all)
-            temperature: Sampling temperature
-            max_tokens: Max response tokens
-            progress_callback: Optional callback(current, total) for progress
-            
-        Returns:
-            Complete EvaluationRun with all results
         """
         items = self.load_dataset(tracks=tracks)
         
         if limit:
-            # Limit per track
+            # Limit per track (naive) or total?
+            # User said "maybe 50 for each model". 
+            # If we have 5 tracks, that's 10 per track.
             from collections import defaultdict
             by_track = defaultdict(list)
             for item in items:
                 by_track[item.track].append(item)
             
             items = []
+            # Distribute limit across tracks roughly equally
+            per_track = max(1, limit // 5)
             for track_items in by_track.values():
-                items.extend(track_items[:limit])
+                items.extend(track_items[:per_track])
         
         results = []
         total = len(items)

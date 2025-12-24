@@ -14,7 +14,7 @@ from .models import CanonicalItem, VariantSlots
 
 class VariantEngine:
     """
-    Generates deterministic variants of canonical MIRAGE items.
+    Generates deterministic variants of canonical ERR-EVAL items.
     
     Variants preserve the same ambiguity structure while changing surface details
     (entity names, contexts, specific values) to prevent memorization.
@@ -69,7 +69,22 @@ class VariantEngine:
         substitutions: dict[str, str] = {}
         for slot_name, options in available_slots.items():
             if options:
-                substitutions[slot_name] = rng.choice(options)
+                # Ensure options is a list (might be a dict from JSON)
+                if isinstance(options, dict):
+                    options = list(options.values())
+                elif not isinstance(options, list):
+                    options = [str(options)]
+                
+                selected = rng.choice(options)
+                
+                # Ensure selected value is a string
+                while isinstance(selected, (list, dict)):
+                    if isinstance(selected, dict):
+                        selected = list(selected.values())[0] if selected else ""
+                    elif isinstance(selected, list):
+                        selected = selected[0] if selected else ""
+                
+                substitutions[slot_name] = str(selected)
         
         # Apply substitutions to prompt
         variant_prompt = self._apply_substitutions(item.prompt, substitutions)

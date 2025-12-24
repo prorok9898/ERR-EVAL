@@ -1,5 +1,5 @@
 """
-CLI commands for MIRAGE benchmark.
+CLI commands for ERR-EVAL benchmark.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ console = Console()
 
 @click.group()
 def main():
-    """MIRAGE Benchmark - Epistemic Reliability Evaluation"""
+    """ERR-EVAL Benchmark - Epistemic Reliability Evaluation"""
     pass
 
 
@@ -26,14 +26,14 @@ def main():
 @click.option("--limit", "-l", default=None, type=int, help="Max items per track")
 @click.option("--output", "-o", default=None, help="Output file path")
 @click.option("--temperature", default=0.0, type=float, help="Sampling temperature")
-@click.option("--judge", default="openai/gpt-4.1", help="Judge model ID")
+@click.option("--judge", default="openai/gpt-5.2", help="Judge model ID")
 def evaluate(model: str, seed: int, tracks: str | None, limit: int | None,
              output: str | None, temperature: float, judge: str):
-    """Run MIRAGE evaluation on a model."""
+    """Run ERR-EVAL evaluation on a model."""
     from .runner import MirageRunner
     from .reporter import generate_results_json, generate_markdown_report, generate_leaderboard_entry, update_leaderboard
     
-    console.print(f"[bold blue]MIRAGE Benchmark Evaluation[/bold blue]")
+    console.print(f"[bold blue]ERR-EVAL Benchmark Evaluation[/bold blue]")
     console.print(f"Model: [cyan]{model}[/cyan]")
     console.print(f"Seed: {seed}")
     console.print(f"Judge: {judge}")
@@ -70,7 +70,9 @@ def evaluate(model: str, seed: int, tracks: str | None, limit: int | None,
     try:
         result = asyncio.run(run_with_progress())
     except Exception as e:
+        import traceback
         console.print(f"[red]Error:[/red] {e}")
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
         raise click.Abort()
     
     # Display results

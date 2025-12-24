@@ -1,5 +1,5 @@
 """
-Scorer for MIRAGE benchmark.
+Scorer for ERR-EVAL benchmark.
 Handles aggregation, percentiles, and failure profiling.
 """
 
@@ -138,30 +138,12 @@ def compute_failure_profile(results: list[ItemResult]) -> FailureProfile:
     avg_track = sum(track_means.values()) / len(track_means) if track_means else 0
     weakest_tracks = [t for t, m in sorted(track_means.items(), key=lambda x: x[1]) if m < avg_track][:2]
     
-    # Analyze common failure modes from mechanical checks
+    # Analyze common failure modes from judge justifications (placeholder for future implementation)
+    # Since mechanical checks are removed, we currently don't have structured failure modes
+    # beyond score analysis.
     failure_counts: dict[str, list[str]] = defaultdict(list)
-    for r in results:
-        for reason in r.mechanical_caps.reasons:
-            # Extract failure mode from reason
-            if "certainty language" in reason.lower():
-                failure_counts["overconfident_certainty"].append(r.item_id)
-            elif "unsupported" in reason.lower() or "hallucin" in reason.lower():
-                failure_counts["hallucinated_details"].append(r.item_id)
-            elif "contradiction" in reason.lower():
-                failure_counts["missed_contradiction"].append(r.item_id)
-            elif "underspecified" in reason.lower():
-                failure_counts["ignored_underspecification"].append(r.item_id)
-            elif "uncertainty" in reason.lower():
-                failure_counts["missed_uncertainty"].append(r.item_id)
     
-    common_failures = [
-        FailureMode(
-            mode=mode,
-            frequency=len(item_ids),
-            example_item_ids=item_ids[:5],
-        )
-        for mode, item_ids in sorted(failure_counts.items(), key=lambda x: -len(x[1]))
-    ][:5]
+    common_failures = []
     
     return FailureProfile(
         weakest_axes=weakest_axes,

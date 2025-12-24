@@ -1,5 +1,5 @@
 """
-Pydantic models for MIRAGE benchmark data structures.
+Pydantic models for ERR-EVAL benchmark data structures.
 """
 
 from __future__ import annotations
@@ -99,16 +99,6 @@ class JudgeScores(BaseModel):
         )
 
 
-class MechanicalCaps(BaseModel):
-    """Score caps from mechanical checks."""
-    ambiguity_detection: int | None = Field(default=None, ge=0, le=2)
-    hallucination_avoidance: int | None = Field(default=None, ge=0, le=2)
-    localization_of_uncertainty: int | None = Field(default=None, ge=0, le=2)
-    response_strategy: int | None = Field(default=None, ge=0, le=2)
-    epistemic_tone: int | None = Field(default=None, ge=0, le=2)
-    reasons: list[str] = Field(default_factory=list)
-
-
 class ItemResult(BaseModel):
     """Complete result for a single item evaluation."""
     item_id: str
@@ -117,13 +107,19 @@ class ItemResult(BaseModel):
     prompt_used: str = Field(..., description="The actual prompt (may be variant)")
     model_response: str = Field(..., description="Raw model response")
     normalized_response: str = Field(..., description="Normalized response for judging")
-    mechanical_caps: MechanicalCaps
+    
+    # Metrics
+    latency_ms: float = Field(default=0.0)
+    cost: float = Field(default=0.0)
+    prompt_tokens: int = Field(default=0)
+    completion_tokens: int = Field(default=0)
+    
     judge_scores: JudgeScores
-    final_scores: JudgeScores = Field(..., description="Scores after applying caps")
+    final_scores: JudgeScores = Field(..., description="Scores (same as judge_scores now)")
     
     @property
     def total_score(self) -> int:
-        """Final total score after caps (0-10)."""
+        """Final total score (0-10)."""
         return self.final_scores.total
 
 
@@ -198,6 +194,11 @@ class LeaderboardEntry(BaseModel):
     percentile: float
     track_scores: dict[TrackType, float]
     axis_scores: dict[str, float]
+    
+    # Average Metrics
+    avg_latency: float
+    avg_cost: float
+    
     evaluated_at: str
 
 

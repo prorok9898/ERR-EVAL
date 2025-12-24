@@ -1,5 +1,5 @@
 """
-MIRAGE Benchmark - Misinterpretation & Reasoning Against Generated Errors
+ERR-EVAL Benchmark - Epistemic Reasoning & Reliability Evaluation
 
 An epistemic reliability benchmark measuring whether models can detect ambiguity,
 avoid hallucinating, localize uncertainty, and maintain calibrated confidence.

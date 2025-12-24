@@ -1,5 +1,5 @@
 """
-Report generator for MIRAGE benchmark.
+Report generator for ERR-EVAL benchmark.
 Creates JSON and Markdown output files.
 """
 
@@ -18,11 +18,32 @@ def generate_results_json(
     """
     Generate a JSON results file for the evaluation run.
     """
+    import yaml
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
+    # Load provider config
+    config_path = Path(__file__).parent.parent / "config" / "models.yaml"
+    provider_meta = {}
+    if config_path.exists():
+        try:
+            with open(config_path) as f:
+                config_data = yaml.safe_load(f)
+                if "providers" in config_data:
+                    for pid, pdata in config_data["providers"].items():
+                        provider_meta[pid] = {
+                            "name": pdata.get("name"),
+                            "color": pdata.get("color", "#666"),
+                            "icon": pdata.get("icon", "?")
+                        }
+        except Exception as e:
+            print(f"Warning: Could not load provider config: {e}")
+
+    data = run.model_dump()
+    data["providers"] = provider_meta
+
     with open(output_path, "w") as f:
-        json.dump(run.model_dump(), f, indent=2)
+        json.dump(data, f, indent=2)
 
 
 def generate_leaderboard_entry(run: EvaluationRun) -> LeaderboardEntry:
@@ -52,6 +73,13 @@ def generate_leaderboard_entry(run: EvaluationRun) -> LeaderboardEntry:
         for axis, scores in axis_totals.items()
     }
     
+    # Compute average metrics
+    latencies = [r.latency_ms for r in run.item_results]
+    costs = [r.cost for r in run.item_results]
+    
+    avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+    avg_cost = sum(costs) / len(costs) if costs else 0.0
+    
     return LeaderboardEntry(
         rank=0,  # Set later when building full leaderboard
         model_id=run.model_card.model_id,
@@ -60,6 +88,8 @@ def generate_leaderboard_entry(run: EvaluationRun) -> LeaderboardEntry:
         percentile=run.percentile or 50.0,
         track_scores=track_scores,
         axis_scores=axis_scores,
+        avg_latency=round(avg_latency, 2),
+        avg_cost=round(avg_cost, 6),
         evaluated_at=run.timestamp,
     )
 
@@ -75,7 +105,7 @@ def generate_markdown_report(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     lines = [
-        f"# MIRAGE Evaluation Report",
+        f"# ERR-EVAL Evaluation Report",
         f"",
         f"**Model**: {run.model_card.model_name} (`{run.model_card.model_id}`)",
         f"**Date**: {run.timestamp}",

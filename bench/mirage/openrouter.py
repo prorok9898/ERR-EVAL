@@ -1,5 +1,5 @@
 """
-OpenRouter API client for MIRAGE benchmark.
+OpenRouter API client for ERR-EVAL benchmark.
 Handles both candidate model inference and GPT 5.2 judging with structured outputs.
 """
 
@@ -10,8 +10,12 @@ import json
 import httpx
 from typing import Any
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
 from .models import JudgeScores, AxisScore
+
+# Load .env file if present
+load_dotenv()
 
 
 class OpenRouterClient:
@@ -30,7 +34,7 @@ class OpenRouterClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://github.com/mirage-benchmark",
-            "X-Title": "MIRAGE Benchmark",
+            "X-Title": "ERR-EVAL Benchmark",
         }
     
     async def complete(
@@ -40,19 +44,12 @@ class OpenRouterClient:
         temperature: float = 0.0,
         max_tokens: int = 2048,
         response_format: dict[str, Any] | None = None,
-    ) -> str:
+    ) -> tuple[str, str]:
         """
         Send a completion request to OpenRouter.
         
-        Args:
-            model: OpenRouter model ID (e.g., "openai/gpt-4o")
-            messages: List of message dicts with 'role' and 'content'
-            temperature: Sampling temperature (0.0 for deterministic)
-            max_tokens: Maximum response tokens
-            response_format: Optional structured output schema
-            
         Returns:
-            The model's response content as a string
+            (content, generation_id)
         """
         payload: dict[str, Any] = {
             "model": model,
@@ -73,7 +70,28 @@ class OpenRouterClient:
             response.raise_for_status()
             data = response.json()
         
-        return data["choices"][0]["message"]["content"]
+        content = data["choices"][0]["message"]["content"]
+        gen_id = data.get("id", "")
+        return content, gen_id
+    
+    async def get_generation_stats(self, generation_id: str) -> dict[str, Any]:
+        """
+        Fetch stats (cost, latency, tokens) for a generation.
+        """
+        if not generation_id:
+            return {}
+            
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.BASE_URL}/generation",
+                params={"id": generation_id},
+                headers=self.headers,
+            )
+            if response.status_code != 200:
+                return {}
+                
+            data = response.json()
+            return data.get("data", {})
     
     async def get_candidate_response(
         self,
@@ -81,21 +99,17 @@ class OpenRouterClient:
         prompt: str,
         temperature: float = 0.0,
         max_tokens: int = 2048,
-    ) -> str:
+    ) -> tuple[str, dict[str, Any]]:
         """
         Get a response from a candidate model being evaluated.
         
-        Args:
-            model: OpenRouter model ID
-            prompt: The MIRAGE prompt to send
-            temperature: Sampling temperature
-            max_tokens: Maximum response tokens
-            
         Returns:
-            Raw model response
+            (Raw model response, Metadata dict with id)
         """
         messages = [{"role": "user", "content": prompt}]
-        return await self.complete(model, messages, temperature, max_tokens)
+        content, gen_id = await self.complete(model, messages, temperature, max_tokens)
+        
+        return content, {"id": gen_id}
     
     async def judge_response(
         self,
@@ -107,16 +121,6 @@ class OpenRouterClient:
     ) -> JudgeScores:
         """
         Use GPT 5.2 to judge a model response with structured outputs.
-        
-        Args:
-            judge_model: The judge model ID (e.g., "openai/gpt-5.2")
-            judge_prompt: System prompt for the judge
-            original_prompt: The original MIRAGE prompt
-            response: The normalized model response to judge
-            gold_behavior: The gold standard behavior from the item
-            
-        Returns:
-            JudgeScores with all 5 axis scores and justifications
         """
         # Build the judge input
         judge_input = f"""## Original Prompt
@@ -132,7 +136,7 @@ Must Do:
 Must Not Do:
 {chr(10).join(f"- {b}" for b in gold_behavior.get("must_not_do", []))}
 
-Score this response on the 5 MIRAGE axes (0-2 each). Provide specific quotes or paraphrases from the response as justification."""
+Score this response on the 5 ERR-EVAL axes (0-2 each). Provide specific quotes or paraphrases from the response as justification."""
 
         messages = [
             {"role": "system", "content": judge_prompt},
@@ -206,7 +210,7 @@ Score this response on the 5 MIRAGE axes (0-2 each). Provide specific quotes or 
             },
         }
         
-        raw_response = await self.complete(
+        raw_response, _ = await self.complete(
             model=judge_model,
             messages=messages,
             temperature=0.0,

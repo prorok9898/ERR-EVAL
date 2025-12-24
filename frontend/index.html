@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIRAGE / Epistemic Reliability</title>
+    <title>ERR-EVAL / Epistemic Reliability</title>
     <meta name="description" content="Benchmarking AI uncertainty, hallucination, and epistemic calibration.">
 
     <!-- Typography: Forum (Classical/Mythic) + Chivo Mono (Technical/Raw) -->
@@ -25,18 +25,15 @@
 
     <header class="site-header">
         <div class="logo-area">
-            <h1 class="logo-type">MIRAGE</h1>
-            <div class="logo-meta">
-                <span>BENCHMARKING</span>
-                <span>EPISTEMIC</span>
-                <span>RELIABILITY</span>
-            </div>
+            <h1 class="logo-type">ERR-EVAL</h1>
+
+            <div class="logo-desc">AI UNCERTAINTY & HALLUCINATION TEST</div>
         </div>
         <nav class="site-nav">
             <a href="#leaderboard" class="nav-link active">[ LEADERBOARD ]</a>
-            <a href="#visuals" class="nav-link">[ VISUALIZATION ]</a>
+            <a href="#visuals" class="nav-link">[ MASTER CHART ]</a>
             <a href="#methodology" class="nav-link">[ METHODOLOGY ]</a>
-            <a href="https://github.com/GustyCube/MIRAGE" target="_blank" class="nav-link icon-link"
+            <a href="https://github.com/GustyCube/ERR-EVAL" target="_blank" class="nav-link icon-link"
                 aria-label="GitHub">
                 <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -53,12 +50,14 @@
         <section class="hero-section">
             <div class="hero-grid">
                 <div class="hero-statement">
-                    <p class="large-text">DO AI MODELS KNOW WHAT THEY <span class="highlight-risk">DON'T</span> KNOW?
-                    </p>
+                    <p class="large-text">DO AI MODELS KNOW WHAT THEY <span class="highlight-risk glitch-hover"
+                            data-text="DON'T">DON'T</span> KNOW?</p>
                     <p class="sub-text">
-                        <strong>MIRAGE</strong> is a benchmark for <strong>Epistemic Reliability</strong>.
-                        We evaluate whether models can detect ambiguity, avoid hallucination, and refuse false premises
-                        instead of confidently answering incorrectly.
+                        <strong>Built for nerds. Executed simply.</strong>
+                        <br><br>
+                        We feed models corrupted commands, false premises, and ambiguity.
+                        The goal isn't to answer—it's to question. Reliability means detecting missing data
+                        and explaining the error, not hallucinating a response.
                     </p>
                 </div>
                 <div class="hero-metrics">
@@ -81,21 +80,28 @@
         <!-- Scoring Axes: The "Truths" -->
         <section class="axes-ticker">
             <div class="ticker-wrap">
-                <div class="ticker">
-                    <div class="ticker-item">AMBIGUITY DETECTION</div>
-                    <div class="ticker-item">///</div>
-                    <div class="ticker-item">HALLUCINATION AVOIDANCE</div>
-                    <div class="ticker-item">///</div>
-                    <div class="ticker-item">LOCALIZATION OF UNCERTAINTY</div>
-                    <div class="ticker-item">///</div>
-                    <div class="ticker-item">RESPONSE STRATEGY</div>
-                    <div class="ticker-item">///</div>
-                    <div class="ticker-item">EPISTEMIC TONE</div>
-                    <div class="ticker-item">///</div>
-                    <div class="ticker-item">AMBIGUITY DETECTION</div>
-                    <div class="ticker-item">///</div>
-                    <div class="ticker-item">HALLUCINATION AVOIDANCE</div>
-                    <div class="ticker-item">///</div>
+                <div class="ticker-track">
+                    <span class="ticker-item">AMBIGUITY DETECTION</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">HALLUCINATION AVOIDANCE</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">LOCALIZATION OF UNCERTAINTY</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">RESPONSE STRATEGY</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">EPISTEMIC TONE</span>
+                    <span class="ticker-item">///</span>
+                    <!-- Duplicate for infinite scroll -->
+                    <span class="ticker-item">AMBIGUITY DETECTION</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">HALLUCINATION AVOIDANCE</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">LOCALIZATION OF UNCERTAINTY</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">RESPONSE STRATEGY</span>
+                    <span class="ticker-item">///</span>
+                    <span class="ticker-item">EPISTEMIC TONE</span>
+                    <span class="ticker-item">///</span>
                 </div>
             </div>
         </section>
@@ -103,24 +109,22 @@
         <!-- Leaderboard Section -->
         <section id="leaderboard" class="leaderboard-section">
             <div class="section-header">
-                <h2>LEADERBOARD_V1.0</h2>
+                <h2>LEADERBOARD</h2>
                 <div class="controls">
                     <div class="search-wrapper">
                         <span class="search-icon">⌕</span>
                         <input type="text" id="search-input" placeholder="SEARCH MODELS...">
                     </div>
-                    <div class="sort-wrapper">
-                        <select id="sort-select">
-                            <option value="overall">SORT: OVERALL SCORE</option>
-                            <option value="ambiguity_detection">SORT: AMBIGUITY</option>
-                            <option value="hallucination_avoidance">SORT: HALLUCINATION</option>
-                            <option value="epistemic_tone">SORT: TONE</option>
-                        </select>
-                    </div>
                 </div>
             </div>
 
             <div class="table-container">
+                <!-- Loading State Overlay -->
+                <div id="loading-overlay" class="loading-overlay">
+                    <div class="loader-swirl"></div>
+                    <div class="loader-text">INITIALIZING_DATA_STREAM...</div>
+                </div>
+
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -146,23 +150,29 @@
 
         <!-- Visualization Section -->
         <section id="visuals" class="visuals-section">
-            <div class="viz-grid">
-                <div class="viz-card">
-                    <div class="viz-header">
-                        <h3>AXIS_PROFILING [TOP 5]</h3>
-                    </div>
-                    <div class="chart-box">
-                        <canvas id="radar-chart"></canvas>
+            <div class="section-header">
+                <h2>MASTER CHART</h2>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" data-tab="accuracy">ACCURACY</button>
+                    <button class="tab-btn" data-tab="cost">COST</button>
+                    <button class="tab-btn" data-tab="speed">SPEED</button>
+                    <button class="tab-btn" data-tab="combined">COMBINED</button>
+                </div>
+                <div class="chart-controls">
+                    <div class="multi-select-container" id="model-filter">
+                        <button class="multi-select-btn">Filter Models (All)</button>
+                        <div class="multi-select-dropdown" id="model-filter-dropdown">
+                            <!-- Checkboxes populated by JS -->
+                        </div>
                     </div>
                 </div>
-                <div class="viz-card">
-                    <div class="viz-header">
-                        <h3>TRACK_PERFORMANCE</h3>
-                    </div>
-                    <div class="chart-box">
-                        <canvas id="bar-chart"></canvas>
-                    </div>
-                </div>
+            </div>
+
+            <div class="master-chart-container">
+                <canvas id="master-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <span id="last-run-display">Last Updated: --</span>
             </div>
         </section>
 
@@ -199,14 +209,14 @@
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-block">
-                <span>MIRAGE BENCHMARK</span>
+                <span>ERR-EVAL BENCHMARK</span>
                 <span class="year">2024-2025</span>
             </div>
             <div class="footer-block center">
                 <span>EPISTEMIC RELIABILITY RESEARCH</span>
             </div>
             <div class="footer-block right">
-                <a href="https://github.com/GustyCube/MIRAGE" target="_blank">GITHUB_REPOSITORY ↗</a>
+                <a href="https://github.com/GustyCube/ERR-EVAL" target="_blank">GITHUB_REPOSITORY ↗</a>
             </div>
         </div>
     </footer>
