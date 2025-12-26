@@ -388,9 +388,8 @@ function renderLeaderboard() {
 
 function getScoreColor(val) {
     const currentTheme = getCurrentTheme();
-    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
     if (val >= 7) return currentTheme.signal;
-    if (val >= 4) return isDark ? '#ffffff' : '#1a1a1a'; // White in dark, dark in light
+    if (val >= 4) return currentTheme.void === '#ffffff' ? '#ffffff' : '#1a1a1a';
     return currentTheme.muted;
 }
 
