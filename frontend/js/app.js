@@ -52,8 +52,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize Chart.js defaults only if available
     if (typeof Chart !== 'undefined') {
-        Chart.defaults.font.family = THEME.font;
-        Chart.defaults.color = THEME.muted;
+        const currentTheme = getCurrentTheme();
+        Chart.defaults.font.family = currentTheme.font;
+        Chart.defaults.color = currentTheme.muted;
     }
 
     const loader = document.getElementById('loading-overlay');
@@ -107,6 +108,7 @@ function setTheme(theme, save = true) {
     if (typeof Chart !== 'undefined') {
         const currentTheme = getCurrentTheme();
         Chart.defaults.color = currentTheme.muted;
+        Chart.defaults.font.family = currentTheme.font;
         
         // Re-render chart if it exists
         if (state.masterChart) {
