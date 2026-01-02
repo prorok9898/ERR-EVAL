@@ -66,6 +66,12 @@ The frontend is automatically deployed to GitHub Pages on push to `main`. The le
 
 **https://ERR-EVAL.gustycube.com**
 
+## Contact
+
+Reach out on **X (Twitter)**:  
+👉 [@GustyCube](https://x.com/GustyCube)
+
+
 ## License
 
 MIT License - Bennett Schwartz (GustyCube)
