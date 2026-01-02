@@ -69,17 +69,16 @@
                     <p class="large-text">DO AI MODELS KNOW WHAT THEY <span class="highlight-risk glitch-hover"
                             data-text="DON'T">DON'T</span> KNOW?</p>
                     <p class="sub-text">
-                        <strong>ERR-EVAL: Epistemic Reasoning & Reliability Evaluation</strong>
+                        Most benchmarks test if AI gets the right answer. <strong>ERR-EVAL</strong> tests if AI knows
+                        when it <em>can't</em> get the right answer.
                         <br><br>
-                        We test whether AI models can recognize when they <em>shouldn't</em> answer confidently.
-                        Each model faces 125 adversarial prompts designed to pressure them into hallucinating—
-                        incomplete information, hidden ambiguities, false premises, and impossible constraints.
+                        Each model faces 125 trick questions designed to pressure them into making things up—
+                        missing information, hidden ambiguities, false premises, and impossible constraints.
                         <br><br>
-                        <strong>The benchmark scores 5 axes:</strong> detecting ambiguity, avoiding hallucinations,
-                        localizing what's missing, choosing the right response strategy, and maintaining calibrated
-                        confidence.
-                        Models that refuse to guess when information is missing score higher than those that confidently
-                        make things up.
+                        <strong>The benchmark scores 5 things:</strong> spotting problems, avoiding hallucinations,
+                        identifying what's missing, asking the right questions, and staying honest about uncertainty.
+                        Models that say "I don't know" when they shouldn't guess score higher than those that
+                        confidently make things up.
                     </p>
                 </div>
                 <div class="hero-metrics">
@@ -96,6 +95,35 @@
                         <span class="metric-value">05</span>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- Methodology / Tracks -->
+        <section id="methodology" class="grid-section">
+            <div class="grid-card">
+                <div class="card-label">TRACK A</div>
+                <h4>GARBLED INPUT</h4>
+                <p>Typos, autocorrect errors, and mangled text. Can the model figure out what you meant—or admit it can't?</p>
+            </div>
+            <div class="grid-card">
+                <div class="card-label">TRACK B</div>
+                <h4>UNCLEAR WORDING</h4>
+                <p>Sentences that could mean multiple things. "I saw the man with the telescope"—who has the telescope?</p>
+            </div>
+            <div class="grid-card">
+                <div class="card-label">TRACK C</div>
+                <h4>TRICK QUESTIONS</h4>
+                <p>Questions that assume something false. A good model should push back, not play along.</p>
+            </div>
+            <div class="grid-card">
+                <div class="card-label">TRACK D</div>
+                <h4>MISSING INFO</h4>
+                <p>Requests that leave out crucial details. The right move is to ask, not guess.</p>
+            </div>
+            <div class="grid-card">
+                <div class="card-label">TRACK E</div>
+                <h4>IMPOSSIBLE ASKS</h4>
+                <p>Requests with contradictory requirements. "Make it faster and use less memory and don't change the code."</p>
             </div>
         </section>
 
@@ -158,11 +186,11 @@
                             <th class="col-rank">#</th>
                             <th class="col-model">MODEL / ID</th>
                             <th class="col-score">OVERALL</th>
-                            <th class="col-track" data-tooltip="Noisy Perception">TRACK A</th>
-                            <th class="col-track" data-tooltip="Ambiguous Semantics">TRACK B</th>
-                            <th class="col-track" data-tooltip="False Premise">TRACK C</th>
-                            <th class="col-track" data-tooltip="Underspecified Tasks">TRACK D</th>
-                            <th class="col-track" data-tooltip="Conflicting Constraints">TRACK E</th>
+                            <th class="col-track" data-tooltip="Garbled Input">TRACK A</th>
+                            <th class="col-track" data-tooltip="Unclear Wording">TRACK B</th>
+                            <th class="col-track" data-tooltip="Trick Questions">TRACK C</th>
+                            <th class="col-track" data-tooltip="Missing Info">TRACK D</th>
+                            <th class="col-track" data-tooltip="Impossible Asks">TRACK E</th>
                         </tr>
                     </thead>
                     <tbody id="leaderboard-body">
@@ -200,35 +228,6 @@
             </div>
             <div class="chart-footer">
                 <span id="last-run-display">Last Updated: --</span>
-            </div>
-        </section>
-
-        <!-- Methodology / Tracks -->
-        <section id="methodology" class="grid-section">
-            <div class="grid-card">
-                <div class="card-label">TRACK A</div>
-                <h4>NOISY PERCEPTION</h4>
-                <p>Handling corrupted inputs, misheard phrases, standard speech-to-text noise errors.</p>
-            </div>
-            <div class="grid-card">
-                <div class="card-label">TRACK B</div>
-                <h4>AMBIGUOUS SEMANTICS</h4>
-                <p>Syntactic ambiguities, scope errors, pronoun references with multiple distinct valid parses.</p>
-            </div>
-            <div class="grid-card">
-                <div class="card-label">TRACK C</div>
-                <h4>FALSE PREMISES</h4>
-                <p>Questions containing unsafe assumptions that must be challenged, not answered.</p>
-            </div>
-            <div class="grid-card">
-                <div class="card-label">TRACK D</div>
-                <h4>UNDERSPECIFIED</h4>
-                <p>Tasks missing critical constraints where action should be suspended for clarification.</p>
-            </div>
-            <div class="grid-card">
-                <div class="card-label">TRACK E</div>
-                <h4>CONFLICTS</h4>
-                <p>Mutually exclusive constraints where trade-offs must be negotiated explicitly.</p>
             </div>
         </section>
     </main>
